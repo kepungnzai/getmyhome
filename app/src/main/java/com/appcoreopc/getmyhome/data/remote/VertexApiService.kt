@@ -1,4 +1,4 @@
-package com.example.gethome.data.remote
+package com.appcoreopc.getmyhome.data.remote
 
 import retrofit2.http.Body
 import retrofit2.http.Header

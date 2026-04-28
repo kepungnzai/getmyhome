@@ -1,4 +1,4 @@
-package com.example.gethome.data.local
+package com.appcoreopc.getmyhome.data.local
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

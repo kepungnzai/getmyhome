@@ -1,10 +1,10 @@
-package com.example.gethome.di
+package com.appcoreopc.getmyhome.di
 
 import android.content.Context
 import androidx.room.Room
-import com.example.gethome.data.local.AnalysisHistoryDao
-import com.example.gethome.data.local.GetHomeDatabase
-import com.example.gethome.data.remote.VertexApiService
+import com.appcoreopc.getmyhome.data.local.AnalysisHistoryDao
+import com.appcoreopc.getmyhome.data.local.GetHomeDatabase
+import com.appcoreopc.getmyhome.data.remote.VertexApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
