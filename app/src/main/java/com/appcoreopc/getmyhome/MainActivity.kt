@@ -244,8 +244,7 @@ fun GetMyHomeApp() {
                 ) {
                     Text("Search Now", fontSize = 16.sp, fontWeight = FontWeight.Medium)
                 }
-
-                Spacer(modifier = Modifier.height(16.dp))
+                
                 Button(
                     onClick = {
                         coroutineScope.launch {
@@ -259,7 +258,7 @@ fun GetMyHomeApp() {
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(20.dp),
+                        .height(56.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = PrimaryPurple
                     ),
