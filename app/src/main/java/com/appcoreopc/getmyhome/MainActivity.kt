@@ -241,6 +241,29 @@ fun GetMyHomeApp() {
                 ) {
                     Text("Search Now", fontSize = 16.sp, fontWeight = FontWeight.Medium)
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = {
+                        coroutineScope.launch {
+                            try {
+                                val reportContent = generateReportGraphQL()
+                                // TODO: Handle report content (e.g., show in WebView or dialog)
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AccentBlue
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Report", fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                }
             }
         }
     }
@@ -326,9 +349,10 @@ private val graphQLClient by lazy {
 suspend fun searchPropertyGraphQL(location: String, propertyType: String): String? = withContext(Dispatchers.IO) {
     val graphQLQuery = JSONObject().apply {
         put("query", """
-            mutation SearchProperty(${'$'}location: String!, ${'$'}propertyType: String!) {
-                searchProperty(location: ${'$'}location, propertyType: ${'$'}propertyType) {
-                    result
+            query AnalyzeQuery(${'$'}location: String!, ${'$'}propertyType: String!) {
+                analyze(location: ${'$'}location, propertyType: ${'$'}propertyType) {
+                    status
+                    analysis
                 }
             }
         """.trimIndent())
@@ -349,7 +373,40 @@ suspend fun searchPropertyGraphQL(location: String, propertyType: String): Strin
 
     if (response.isSuccessful && responseBody != null) {
         val jsonResponse = JSONObject(responseBody)
-        jsonResponse.optJSONObject("data")?.optJSONObject("searchProperty")?.optString("result")
+        jsonResponse.optJSONObject("data")?.optJSONObject("analyze")?.optString("analysis")
+    } else {
+        null
+    }
+}
+
+suspend fun generateReportGraphQL(format: String = "html"): String? = withContext(Dispatchers.IO) {
+    val graphQLQuery = JSONObject().apply {
+        put("query", """
+            query GenerateReportQuery(${'$'}format: String!) {
+                generateReport(format: ${'$'}format) {
+                    status
+                    format
+                    content
+                }
+            }
+        """.trimIndent())
+        put("variables", JSONObject().apply {
+            put("format", format)
+        })
+    }
+
+    val requestBody = graphQLQuery.toString().toRequestBody("application/json".toMediaType())
+    val request = Request.Builder()
+        .url("http://10.0.2.2:8000/graphql")
+        .post(requestBody)
+        .build()
+
+    val response = graphQLClient.newCall(request).execute()
+    val responseBody = response.body?.string()
+
+    if (response.isSuccessful && responseBody != null) {
+        val jsonResponse = JSONObject(responseBody)
+        jsonResponse.optJSONObject("data")?.optJSONObject("generateReport")?.optString("content")
     } else {
         null
     }
