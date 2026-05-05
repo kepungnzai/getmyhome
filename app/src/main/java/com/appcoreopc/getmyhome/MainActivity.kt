@@ -71,6 +71,9 @@ import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
 import retrofit2.http.POST
 import java.util.concurrent.TimeUnit
+import com.appcoreopc.getmyhome.data.const.API_BASE_URL
+import com.appcoreopc.getmyhome.data.const.GRAPHQL_ENDPOINT
+import com.appcoreopc.getmyhome.data.const.GRAPHQL_ENDPOINT_ENABLED
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -256,46 +259,15 @@ fun GetMyHomeApp() {
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp),
+                        .height(20.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = AccentBlue
+                        containerColor = PrimaryPurple
                     ),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text("Report", fontSize = 16.sp, fontWeight = FontWeight.Medium)
                 }
             }
-        }
-    }
-}
-
-@PreviewScreenSizes
-@Composable
-fun GetMyHomeApp2() {
-    var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.HOME) }
-
-    NavigationSuiteScaffold(
-        navigationSuiteItems = {
-            AppDestinations.entries.forEach {
-                item(
-                    icon = {
-                        Icon(
-                            painterResource(it.icon),
-                            contentDescription = it.label
-                        )
-                    },
-                    label = { Text(it.label) },
-                    selected = it == currentDestination,
-                    onClick = { currentDestination = it }
-                )
-            }
-        }
-    ) {
-        Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-            Greeting(
-                name = "MacOS",
-                modifier = Modifier.padding(innerPadding)
-            )
         }
     }
 }
@@ -330,7 +302,7 @@ private val backendApi by lazy {
         .build()
 
     Retrofit.Builder()
-        .baseUrl("http://10.0.2.2:8000/") // Android emulator localhost
+        .baseUrl(API_BASE_URL) // Android emulator localhost
         .client(client)
         .addConverterFactory(GsonConverterFactory.create())
         .build()
@@ -364,7 +336,7 @@ suspend fun searchPropertyGraphQL(location: String, propertyType: String): Strin
 
     val requestBody = graphQLQuery.toString().toRequestBody("application/json".toMediaType())
     val request = Request.Builder()
-        .url("http://10.0.2.2:8000/graphql")
+        .url(GRAPHQL_ENDPOINT)
         .post(requestBody)
         .build()
 
@@ -397,7 +369,7 @@ suspend fun generateReportGraphQL(format: String = "html"): String? = withContex
 
     val requestBody = graphQLQuery.toString().toRequestBody("application/json".toMediaType())
     val request = Request.Builder()
-        .url("http://10.0.2.2:8000/graphql")
+        .url(GRAPHQL_ENDPOINT)
         .post(requestBody)
         .build()
 
@@ -409,21 +381,5 @@ suspend fun generateReportGraphQL(format: String = "html"): String? = withContex
         jsonResponse.optJSONObject("data")?.optJSONObject("generateReport")?.optString("content")
     } else {
         null
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello! Welcome $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    GetMyHomeTheme {
-        Greeting("Android")
     }
 }
