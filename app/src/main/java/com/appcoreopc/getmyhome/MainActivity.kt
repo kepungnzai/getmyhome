@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -94,6 +96,7 @@ fun GetMyHomeApp() {
     var location by rememberSaveable { mutableStateOf("") }
     var propertyType by rememberSaveable { mutableStateOf("") }
     var useGraphQL by rememberSaveable { mutableStateOf(true) }
+    var reportContent by rememberSaveable { mutableStateOf<String?>(null) }
     val coroutineScope = rememberCoroutineScope()
 
     NavigationSuiteScaffold(
@@ -221,7 +224,12 @@ fun GetMyHomeApp() {
                                     val result = searchPropertyGraphQL(location, propertyType)
                                     // TODO: Handle GraphQL response: result
                                 } else {
-                                    val response = backendApi.searchProperty(PropertySearchRequest(location, propertyType))
+                                    val response = backendApi.searchProperty(
+                                        PropertySearchRequest(
+                                            location,
+                                            propertyType
+                                        )
+                                    )
                                     if (response.isSuccessful) {
                                         // TODO: Handle successful response: response.body()?.result
                                     } else {
@@ -244,13 +252,13 @@ fun GetMyHomeApp() {
                 ) {
                     Text("Search Now", fontSize = 16.sp, fontWeight = FontWeight.Medium)
                 }
-                
+
                 Button(
                     onClick = {
                         coroutineScope.launch {
                             try {
-                                val reportContent = generateReportGraphQL()
-                                // TODO: Handle report content (e.g., show in WebView or dialog)
+                                val reportResponse = generateReportGraphQL()
+                                reportContent = reportResponse?.content
                             } catch (e: Exception) {
                                 e.printStackTrace()
                             }
@@ -266,6 +274,24 @@ fun GetMyHomeApp() {
                 ) {
                     Text("Report", fontSize = 16.sp, fontWeight = FontWeight.Medium)
                 }
+
+                if (reportContent != null) {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(300.dp)
+                            .padding(top = 16.dp)
+                    ) {
+                        items(reportContent!!.split("\n")) { line ->
+                            Text(
+                                text = line,
+                                color = TextPrimary,
+                                modifier = Modifier.padding(vertical = 4.dp)
+                            )
+                        }
+                    }
+                }
+
             }
         }
     }
@@ -282,6 +308,12 @@ enum class AppDestinations(
 
 data class PropertySearchRequest(val location: String, val propertyType: String)
 data class PropertySearchResponse(val result: String?)
+
+data class ReportResponse(
+    val status: String,
+    val format: String,
+    val content: String? = null
+)
 
 interface YourBackendApi {
     @POST("api/property-search")
@@ -310,49 +342,55 @@ private val backendApi by lazy {
 
 private val graphQLClient by lazy {
     OkHttpClient.Builder()
-        .addInterceptor(HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY })
+        .addInterceptor(HttpLoggingInterceptor().apply {
+            level = HttpLoggingInterceptor.Level.BODY
+        })
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
         .writeTimeout(30, TimeUnit.SECONDS)
         .build()
 }
 
-suspend fun searchPropertyGraphQL(location: String, propertyType: String): String? = withContext(Dispatchers.IO) {
-    val graphQLQuery = JSONObject().apply {
-        put("query", """
+suspend fun searchPropertyGraphQL(location: String, propertyType: String): String? =
+    withContext(Dispatchers.IO) {
+        val graphQLQuery = JSONObject().apply {
+            put(
+                "query", """
             query AnalyzeQuery(${'$'}location: String!, ${'$'}propertyType: String!) {
                 analyze(location: ${'$'}location, propertyType: ${'$'}propertyType) {
                     status
                     analysis
                 }
             }
-        """.trimIndent())
-        put("variables", JSONObject().apply {
-            put("location", location)
-            put("propertyType", propertyType)
-        })
+        """.trimIndent()
+            )
+            put("variables", JSONObject().apply {
+                put("location", location)
+                put("propertyType", propertyType)
+            })
+        }
+
+        val requestBody = graphQLQuery.toString().toRequestBody("application/json".toMediaType())
+        val request = Request.Builder()
+            .url(GRAPHQL_ENDPOINT)
+            .post(requestBody)
+            .build()
+
+        val response = graphQLClient.newCall(request).execute()
+        val responseBody = response.body?.string()
+
+        if (response.isSuccessful && responseBody != null) {
+            val jsonResponse = JSONObject(responseBody)
+            jsonResponse.optJSONObject("data")?.optJSONObject("analyze")?.optString("analysis")
+        } else {
+            null
+        }
     }
 
-    val requestBody = graphQLQuery.toString().toRequestBody("application/json".toMediaType())
-    val request = Request.Builder()
-        .url(GRAPHQL_ENDPOINT)
-        .post(requestBody)
-        .build()
-
-    val response = graphQLClient.newCall(request).execute()
-    val responseBody = response.body?.string()
-
-    if (response.isSuccessful && responseBody != null) {
-        val jsonResponse = JSONObject(responseBody)
-        jsonResponse.optJSONObject("data")?.optJSONObject("analyze")?.optString("analysis")
-    } else {
-        null
-    }
-}
-
-suspend fun generateReportGraphQL(format: String = "html"): String? = withContext(Dispatchers.IO) {
+suspend fun generateReportGraphQL(format: String = "html"): ReportResponse? = withContext(Dispatchers.IO) {
     val graphQLQuery = JSONObject().apply {
-        put("query", """
+        put(
+            "query", """
             query GenerateReportQuery(${'$'}format: String!) {
                 generateReport(format: ${'$'}format) {
                     status
@@ -360,7 +398,8 @@ suspend fun generateReportGraphQL(format: String = "html"): String? = withContex
                     content
                 }
             }
-        """.trimIndent())
+        """.trimIndent()
+        )
         put("variables", JSONObject().apply {
             put("format", format)
         })
@@ -377,7 +416,16 @@ suspend fun generateReportGraphQL(format: String = "html"): String? = withContex
 
     if (response.isSuccessful && responseBody != null) {
         val jsonResponse = JSONObject(responseBody)
-        jsonResponse.optJSONObject("data")?.optJSONObject("generateReport")?.optString("content")
+        val generateReportJson = jsonResponse.optJSONObject("data")?.optJSONObject("generateReport")
+        if (generateReportJson != null) {
+            ReportResponse(
+                status = generateReportJson.optString("status"),
+                format = generateReportJson.optString("format"),
+                content = generateReportJson.optString("content")
+            )
+        } else {
+            null
+        }
     } else {
         null
     }

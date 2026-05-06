@@ -167,17 +167,3 @@ fun LoginScreen(
         }
     }
 }
-
-
-fun main() {
-    println("Hello, world!!!")
-    sayHello() {
-        10
-    }
-}
-
-fun sayHello(name: String = "jeremy", value: () -> Int) { 
-   println("$name: ${value()}")
-}
-
-
