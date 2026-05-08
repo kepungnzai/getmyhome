@@ -11,7 +11,7 @@ import androidx.compose.ui.Modifier
 import com.appcoreopc.getmyhome.ui.theme.GetMyHomeTheme
 import com.appcoreopc.getmyhome.ui.components.LoginScreen
 
-class LoginActivity : ComponentActivity() {
+class AnalysisActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -34,12 +34,12 @@ class LoginActivity : ComponentActivity() {
     }
 
     private fun createAccount(username: String, password: String) {
-        startActivity(Intent(this@LoginActivity, MainActivity::class.java))
+        startActivity(Intent(this@AnalysisActivity, MainActivity::class.java))
         finish()
     }
 
     private fun signInWithGoogle() {
-        startActivity(Intent(this@LoginActivity, MainActivity::class.java))
+        startActivity(Intent(this@AnalysisActivity, MainActivity::class.java))
         finish()
     }
 }

@@ -2,7 +2,6 @@ package com.appcoreopc.getmyhome.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.appcoreopc.getmyhome.data.local.AnalysisHistory
 import com.appcoreopc.getmyhome.data.repository.HomeRepository
 import com.appcoreopc.getmyhome.util.LocationHelper
 import dagger.hilt.android.lifecycle.HiltViewModel

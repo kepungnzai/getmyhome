@@ -14,8 +14,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,8 +24,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.runtime.Composable
@@ -38,19 +34,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.appcoreopc.getmyhome.ui.theme.AccentBlue
-import com.appcoreopc.getmyhome.ui.theme.AccentPink
 import com.appcoreopc.getmyhome.ui.theme.BackgroundDark
 import com.appcoreopc.getmyhome.ui.theme.CardGradientEnd
 import com.appcoreopc.getmyhome.ui.theme.CardGradientStart
@@ -67,15 +58,19 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.logging.HttpLoggingInterceptor
+import okhttp3.WebSocket
+import okhttp3.WebSocketListener
 import org.json.JSONObject
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import retrofit2.http.Body
-import retrofit2.http.POST
 import java.util.concurrent.TimeUnit
 import com.appcoreopc.getmyhome.data.const.API_BASE_URL
 import com.appcoreopc.getmyhome.data.const.GRAPHQL_ENDPOINT
-import com.appcoreopc.getmyhome.data.const.GRAPHQL_ENDPOINT_ENABLED
+import com.appcoreopc.getmyhome.data.const.GRAPHQL_WS_ENDPOINT
+import com.appcoreopc.getmyhome.data.const.AppDestinations
+import com.appcoreopc.getmyhome.data.local.PropertySearchRequest
+import com.appcoreopc.getmyhome.data.local.ReportResponse
+import com.appcoreopc.getmyhome.data.local.PropertySearchBackendApi
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -95,7 +90,7 @@ fun GetMyHomeApp() {
     var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.HOME) }
     var location by rememberSaveable { mutableStateOf("") }
     var propertyType by rememberSaveable { mutableStateOf("") }
-    var useGraphQL by rememberSaveable { mutableStateOf(true) }
+    var useGraphQL by rememberSaveable { mutableStateOf(1) }
     var reportContent by rememberSaveable { mutableStateOf<String?>(null) }
     val coroutineScope = rememberCoroutineScope()
 
@@ -209,22 +204,26 @@ fun GetMyHomeApp() {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Use GraphQL", color = TextPrimary)
-                    androidx.compose.material3.Switch(
-                        checked = useGraphQL,
-                        onCheckedChange = { useGraphQL = it }
-                    )
+
                 }
 
                 Button(
                     onClick = {
                         coroutineScope.launch {
                             try {
-                                if (useGraphQL) {
+                                if (useGraphQL  == 0) {
                                     val result = searchPropertyGraphQL(location, propertyType)
                                     // TODO: Handle GraphQL response: result
-                                } else {
-                                    val response = backendApi.searchProperty(
+                                }
+                                else if (useGraphQL == 1) {
+                                     reportContent = ""
+                                     analyzeStreamGraphQL(location, propertyType) { data ->
+                                         reportContent = data
+                                     }
+                                 }
+                                else {
+
+                                    val response = propertySearchBackendApi.searchProperty(
                                         PropertySearchRequest(
                                             location,
                                             propertyType
@@ -291,36 +290,12 @@ fun GetMyHomeApp() {
                         }
                     }
                 }
-
             }
         }
     }
 }
 
-enum class AppDestinations(
-    val label: String,
-    val icon: Int,
-) {
-    HOME("Home", R.drawable.ic_home),
-    FAVORITES("Favorites", R.drawable.ic_favorite),
-    PROFILE("Profile", R.drawable.ic_account_box),
-}
-
-data class PropertySearchRequest(val location: String, val propertyType: String)
-data class PropertySearchResponse(val result: String?)
-
-data class ReportResponse(
-    val status: String,
-    val format: String,
-    val content: String? = null
-)
-
-interface YourBackendApi {
-    @POST("api/property-search")
-    suspend fun searchProperty(@Body request: PropertySearchRequest): retrofit2.Response<PropertySearchResponse>
-}
-
-private val backendApi by lazy {
+private val propertySearchBackendApi by lazy {
     val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
     }
@@ -337,7 +312,7 @@ private val backendApi by lazy {
         .client(client)
         .addConverterFactory(GsonConverterFactory.create())
         .build()
-        .create(YourBackendApi::class.java)
+        .create(PropertySearchBackendApi::class.java)
 }
 
 private val graphQLClient by lazy {
@@ -429,4 +404,74 @@ suspend fun generateReportGraphQL(format: String = "html"): ReportResponse? = wi
     } else {
         null
     }
+}
+
+suspend fun analyzeStreamGraphQL(location: String, propertyType: String, onData: (String) -> Unit) = withContext(Dispatchers.IO) {
+    val wsClient = OkHttpClient.Builder().build()
+
+    val request = Request.Builder().url(GRAPHQL_WS_ENDPOINT).addHeader("Sec-WebSocket-Protocol", "graphql-transport-ws").build()
+    val stringBuilder = StringBuilder()
+
+    wsClient.newWebSocket(request, object : WebSocketListener() {
+        override fun onOpen(webSocket: WebSocket, response: okhttp3.Response) {
+            val initMessage = JSONObject().apply {
+                put("type", "connection_init")
+            }.toString()
+            webSocket.send(initMessage)
+        }
+
+        override fun onMessage(webSocket: WebSocket, text: String) {
+            try {
+                val message = JSONObject(text)
+                when (message.getString("type")) {
+                    "connection_ack" -> {
+                        val subscribeMessage = JSONObject().apply {
+                            put("id", "1")
+                            put("type", "subscribe")
+                            put("payload", JSONObject().apply {
+                                put("query", """
+                                    subscription AnalyzeStream(${'$'}location: String!, ${'$'}propertyType: String!) {
+                                        analyzeStream(location: ${'$'}location, propertyType: ${'$'}propertyType) {
+                                            status
+                                            analysis
+                                        }
+                                    }
+                                """.trimIndent())
+                                put("variables", JSONObject().apply {
+                                    put("location", location)
+                                    put("propertyType", propertyType)
+                                })
+                            })
+                        }.toString()
+                        webSocket.send(subscribeMessage)
+                    }
+                    "next" -> {
+                        val payload = message.optJSONObject("payload")
+                        val data = payload?.optJSONObject("data")
+                        val analyzeStream = data?.optJSONObject("analyzeStream")
+                        val analysis = analyzeStream?.optString("analysis")
+                        if (!analysis.isNullOrEmpty()) {
+                            stringBuilder.append(analysis).append("\n")
+                            onData(stringBuilder.toString())
+                        }
+                    }
+                    "complete" -> {
+                        webSocket.close(1000, "Complete")
+                    }
+                    "error" -> {
+                        webSocket.close(1000, "Error")
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
+        override fun onFailure(webSocket: WebSocket, t: Throwable, response: okhttp3.Response?) {
+            t.printStackTrace()
+        }
+
+        override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
+        }
+    })
 }
