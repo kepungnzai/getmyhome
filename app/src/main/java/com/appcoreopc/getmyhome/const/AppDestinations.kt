@@ -5,6 +5,6 @@ enum class AppDestinations(
     val icon: Int,
 ) {
     HOME("Home", R.drawable.ic_home),
-    INSIGHTS("Insights", R.drawable.ic_favorite),
+    INSIGHTS("Insights", R.drawable.ic_analytics),
     SETTINGS("Settings", R.drawable.ic_account_box),
 }

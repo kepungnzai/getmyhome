@@ -71,6 +71,7 @@ import com.appcoreopc.getmyhome.data.const.AppDestinations
 import com.appcoreopc.getmyhome.data.local.PropertySearchRequest
 import com.appcoreopc.getmyhome.data.local.ReportResponse
 import com.appcoreopc.getmyhome.data.local.PropertySearchBackendApi
+import androidx.compose.foundation.layout.size
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -113,187 +114,233 @@ fun GetMyHomeApp() {
         containerColor = BackgroundDark,
         contentColor = TextPrimary
     ) {
-        val gradientBrush = Brush.linearGradient(
-            colors = listOf(CardGradientStart, CardGradientEnd),
-            start = Offset(0f, 0f),
-            end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
-        )
+        @Composable
+        fun HomeUIComponentsBuild() {
+            val gradientBrush = Brush.linearGradient(
+                colors = listOf(CardGradientStart, CardGradientEnd),
+                start = Offset(0f, 0f),
+                end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
+            )
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(BackgroundDark)
-                .padding(16.dp)
-        ) {
-            // Balance Card
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 24.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-                shape = RoundedCornerShape(20.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(gradientBrush)
-                        .padding(24.dp)
-                ) {
-                    Column {
-                        Text(
-                            text = "Search Properties",
-                            color = TextPrimary.copy(alpha = 0.8f),
-                            fontSize = 14.sp
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Get My Home",
-                            color = TextPrimary,
-                            fontSize = 28.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "Find your dream home",
-                            color = TextPrimary.copy(alpha = 0.7f),
-                            fontSize = 14.sp
-                        )
-                    }
-                }
-            }
-
-            // Search Form
             Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(BackgroundDark)
+                    .padding(16.dp)
             ) {
-                OutlinedTextField(
-                    value = location,
-                    onValueChange = { location = it },
-                    label = { Text("Location", color = TextSecondary) },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = TextPrimary,
-                        unfocusedTextColor = TextPrimary,
-                        focusedBorderColor = PrimaryPurple,
-                        unfocusedBorderColor = TextSecondary,
-                        cursorColor = PrimaryPurple,
-                        focusedContainerColor = SurfaceDark,
-                        unfocusedContainerColor = SurfaceDark
-                    )
-                )
-
-                OutlinedTextField(
-                    value = propertyType,
-                    onValueChange = { propertyType = it },
-                    label = { Text("Property Type", color = TextSecondary) },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = TextPrimary,
-                        unfocusedTextColor = TextPrimary,
-                        focusedBorderColor = PrimaryPurple,
-                        unfocusedBorderColor = TextSecondary,
-                        cursorColor = PrimaryPurple,
-                        focusedContainerColor = SurfaceDark,
-                        unfocusedContainerColor = SurfaceDark
-                    )
-                )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-
-                }
-
-                Button(
-                    onClick = {
-                        coroutineScope.launch {
-                            try {
-                                if (useGraphQL  == 0) {
-                                    val result = searchPropertyGraphQL(location, propertyType)
-                                    // TODO: Handle GraphQL response: result
-                                }
-                                else if (useGraphQL == 1) {
-                                     reportContent = ""
-                                     analyzeStreamGraphQL(location, propertyType) { data ->
-                                         reportContent = data
-                                     }
-                                 }
-                                else {
-
-                                    val response = propertySearchBackendApi.searchProperty(
-                                        PropertySearchRequest(
-                                            location,
-                                            propertyType
-                                        )
-                                    )
-                                    if (response.isSuccessful) {
-                                        // TODO: Handle successful response: response.body()?.result
-                                    } else {
-                                        // TODO: Handle API error
-                                    }
-                                }
-                            } catch (e: Exception) {
-                                // TODO: Handle network error
-                                e.printStackTrace()
-                            }
-                        }
-                    },
+                // Balance Card
+                Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = PrimaryPurple
-                    ),
-                    shape = RoundedCornerShape(12.dp)
+                        .padding(bottom = 24.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+                    shape = RoundedCornerShape(20.dp)
                 ) {
-                    Text("Search Now", fontSize = 16.sp, fontWeight = FontWeight.Medium)
-                }
-
-                Button(
-                    onClick = {
-                        coroutineScope.launch {
-                            try {
-                                val reportResponse = generateReportGraphQL()
-                                reportContent = reportResponse?.content
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                            }
-                        }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = PrimaryPurple
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text("Report", fontSize = 16.sp, fontWeight = FontWeight.Medium)
-                }
-
-                if (reportContent != null) {
-                    LazyColumn(
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(300.dp)
-                            .padding(top = 16.dp)
+                            .background(gradientBrush)
+                            .padding(24.dp)
                     ) {
-                        items(reportContent!!.split("\n")) { line ->
+                        Column {
                             Text(
-                                text = line,
-                                color = TextPrimary,
-                                modifier = Modifier.padding(vertical = 4.dp)
+                                text = "Search Properties",
+                                color = TextPrimary.copy(alpha = 0.8f),
+                                fontSize = 14.sp
                             )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Get My Home",
+                                color = TextPrimary,
+                                fontSize = 28.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = "Find your dream home",
+                                color = TextPrimary.copy(alpha = 0.7f),
+                                fontSize = 14.sp
+                            )
+                        }
+                    }
+                }
+
+                // Search Form
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    OutlinedTextField(
+                        value = location,
+                        onValueChange = { location = it },
+                        label = { Text("Location", color = TextSecondary) },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = TextPrimary,
+                            unfocusedTextColor = TextPrimary,
+                            focusedBorderColor = PrimaryPurple,
+                            unfocusedBorderColor = TextSecondary,
+                            cursorColor = PrimaryPurple,
+                            focusedContainerColor = SurfaceDark,
+                            unfocusedContainerColor = SurfaceDark
+                        )
+                    )
+
+                    OutlinedTextField(
+                        value = propertyType,
+                        onValueChange = { propertyType = it },
+                        label = { Text("Property Type", color = TextSecondary) },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = TextPrimary,
+                            unfocusedTextColor = TextPrimary,
+                            focusedBorderColor = PrimaryPurple,
+                            unfocusedBorderColor = TextSecondary,
+                            cursorColor = PrimaryPurple,
+                            focusedContainerColor = SurfaceDark,
+                            unfocusedContainerColor = SurfaceDark
+                        )
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+
+                    }
+
+                    Button(
+                        onClick = {
+                            coroutineScope.launch {
+                                try {
+                                    if (useGraphQL == 0) {
+                                        val result = searchPropertyGraphQL(location, propertyType)
+                                        // TODO: Handle GraphQL response: result
+                                    } else if (useGraphQL == 1) {
+                                        reportContent = ""
+                                        analyzeStreamGraphQL(location, propertyType) { data ->
+                                            reportContent = data
+                                        }
+                                    } else {
+
+                                        val response = propertySearchBackendApi.searchProperty(
+                                            PropertySearchRequest(
+                                                location,
+                                                propertyType
+                                            )
+                                        )
+                                        if (response.isSuccessful) {
+                                            // TODO: Handle successful response: response.body()?.result
+                                        } else {
+                                            // TODO: Handle API error
+                                        }
+                                    }
+                                } catch (e: Exception) {
+                                    // TODO: Handle network error
+                                    e.printStackTrace()
+                                }
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = PrimaryPurple
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("Search Now", fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                    }
+
+                    Button(
+                        onClick = {
+                            coroutineScope.launch {
+                                try {
+                                    val reportResponse = generateReportGraphQL()
+                                    reportContent = reportResponse?.content
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                }
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = PrimaryPurple
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        )
+                        {
+                            Text("Report", fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                        }
+                    }
+
+                    if (reportContent != null) {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(300.dp)
+                                .padding(top = 16.dp)
+                        ) {
+                            items(reportContent!!.split("\n")) { line ->
+                                Text(
+                                    text = line,
+                                    color = TextPrimary,
+                                    modifier = Modifier.padding(vertical = 4.dp)
+                                )
+                            }
                         }
                     }
                 }
             }
         }
-    }
-}
+
+        when (currentDestination) {
+            AppDestinations.HOME -> {
+                HomeUIComponentsBuild()
+            }
+            AppDestinations.INSIGHTS -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Insights", color = TextPrimary, fontSize = 24.sp)
+                }
+            }
+            AppDestinations.INSIGHTS -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            painterResource(R.drawable.ic_analytics),
+                            contentDescription = "Analysis",
+                            tint = PrimaryPurple,
+                            modifier = Modifier
+                                .size(64.dp)
+                                .padding(bottom = 16.dp)
+                        )
+                        Text("Analysis Dashboard", color = TextPrimary, fontSize = 24.sp)
+                    }
+                }
+            }
+            AppDestinations.SETTINGS -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Settings", color = TextPrimary, fontSize = 24.sp)
+                }
+            }
+        }
+    }}
 
 private val propertySearchBackendApi by lazy {
     val loggingInterceptor = HttpLoggingInterceptor().apply {
