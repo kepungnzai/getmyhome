@@ -2,8 +2,10 @@ package com.appcoreopc.getmyhome.di
 
 import android.content.Context
 import androidx.room.Room
+import com.appcoreopc.getmyhome.data.const.API_BASE_URL
 import com.appcoreopc.getmyhome.data.local.AnalysisHistoryDao
 import com.appcoreopc.getmyhome.data.local.GetHomeDatabase
+import com.appcoreopc.getmyhome.data.local.PropertySearchBackendApi
 import com.appcoreopc.getmyhome.data.remote.VertexApiService
 import dagger.Module
 import dagger.Provides
@@ -14,6 +16,7 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
 @Module
@@ -33,6 +36,30 @@ object AppModule {
     @Provides
     fun provideAnalysisHistoryDao(database: GetHomeDatabase): AnalysisHistoryDao {
         return database.analysisHistoryDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideOkHttpClient(): OkHttpClient {
+        return OkHttpClient.Builder()
+            .addInterceptor(HttpLoggingInterceptor().apply {
+                level = HttpLoggingInterceptor.Level.BODY
+            })
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun providePropertySearchBackendApi(client: OkHttpClient): PropertySearchBackendApi {
+        return Retrofit.Builder()
+            .baseUrl(API_BASE_URL)
+            .client(client)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(PropertySearchBackendApi::class.java)
     }
 
     @Provides

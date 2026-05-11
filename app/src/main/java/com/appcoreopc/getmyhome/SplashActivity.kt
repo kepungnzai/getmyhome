@@ -38,6 +38,7 @@ class SplashActivity : ComponentActivity() {
                     },
                     onNavigateToLogin = {
                         startActivity(Intent(this@SplashActivity, LoginActivity::class.java))
+                        //startActivity(Intent(this@SplashActivity, DetailActivity::class.java))
                         finish()
                     }
                 )
