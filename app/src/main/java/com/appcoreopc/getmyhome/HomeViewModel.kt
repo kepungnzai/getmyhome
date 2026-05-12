@@ -306,4 +306,78 @@ class HomeViewModel @Inject constructor(
             }
         }
     }
+
+    fun fetchUserProfile(userId: String) {
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+                val reports = withContext(Dispatchers.IO) {
+                    val graphQLQuery = JSONObject().apply {
+                        put("query", """
+                            query GetUserReports(${'$'}userId: String!) {
+                                getReportsByUserId(userId: ${'$'}userId) {
+                                    status
+                                    userId
+                                    reports {
+                                      id
+                                      location
+                                      propertyType
+                                      currentAnalysis
+                                    }
+                                }
+                            }
+                        """.trimIndent())
+                        put("variables", JSONObject().apply {
+                            put("userId", userId)
+                        })
+                    }
+
+                    val requestBody = graphQLQuery.toString().toRequestBody("application/json".toMediaType())
+                    val request = Request.Builder()
+                        .url(GRAPHQL_ENDPOINT)
+                        .post(requestBody)
+                        .build()
+
+                    val response = graphQLClient.newCall(request).execute()
+                    val responseBody = response.body?.string()
+
+                    if (response.isSuccessful && responseBody != null) {
+                        val jsonResponse = JSONObject(responseBody)
+                        val data = jsonResponse.optJSONObject("data")
+                        val getReportsByUserId = data?.optJSONObject("getReportsByUserId")
+                        val reportsArray = getReportsByUserId?.optJSONArray("reports")
+                        if (reportsArray != null) {
+                            (0 until reportsArray.length()).map { i ->
+                                val report = reportsArray.getJSONObject(i)
+                                UserReport(
+                                    reportId = report.optString("id"),
+                                    location = report.optString("location"),
+                                    propertyType = report.optString("propertyType"),
+                                    currentAnalysis = report.optString("currentAnalysis"),
+                                    propertyPrice = 0,
+                                    propertyPriceIncrease = 0,
+                                    proximityAmenities = 0,
+                                    proximitySchools = 0,
+                                    proximityTrainStation = 0,
+                                    floodBushfireRisk = 0
+                                )
+                            }
+                        } else {
+                            emptyList()
+                        }
+                    } else {
+                        emptyList()
+                    }
+                }
+                _userReports.value = reports
+            } catch (e: Exception) {
+                e.printStackTrace()
+                _userReports.value = emptyList()
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
 }
+
+

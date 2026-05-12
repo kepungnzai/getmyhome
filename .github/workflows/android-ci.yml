@@ -1,0 +1,90 @@
+name: Android CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Create local.properties
+        run: |
+          echo "sdk.dir=$ANDROID_HOME" >> local.properties
+        shell: bash
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Run unit tests
+        run: ./gradlew test
+
+      - name: Run instrumented tests
+        run: ./gradlew connectedAndroidTest
+        continue-on-error: true
+
+      - name: Build debug APK
+        run: ./gradlew assembleDebug
+
+      - name: Build release APK
+        run: ./gradlew assembleRelease
+        continue-on-error: true
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          retention-days: 7
+
+      - name: Upload release APK
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: release-apk
+          path: app/build/outputs/apk/release/*.apk
+          retention-days: 7
+
+  # deployment:
+  #   needs: build
+  #   runs-on: ubuntu-latest
+  #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+  #
+  #   steps:
+  #     - name: Download release APK
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: release-apk
+  #         path: app/build/outputs/apk/release
+  #
+  #     - name: Upload to Google Play Console
+  #       uses: r0adkll/upload-google-play@v1
+  #       with:
+  #         service-account-json: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+  #         package-name: com.appcoreopc.getmyhome
+  #         release-files: app/build/outputs/apk/release/*.apk
+  #         track: internal
+  #
+  #     # Or for Firebase App Distribution:
+  #     # - name: Upload to Firebase App Distribution
+  #     #   uses: wzieba/Firebase-Distribution-Github-Action@v1
+  #     #   with:
+  #     #     app: ${{ secrets.FIREBASE_APP_ID }}
+  #     #     serviceCredentialsFile: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+  #     #     groups: testers
+  #     #     file: app/build/outputs/apk/release/*.apk

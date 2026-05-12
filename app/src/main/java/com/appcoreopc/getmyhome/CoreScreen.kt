@@ -37,6 +37,7 @@ import com.appcoreopc.getmyhome.ui.theme.PrimaryPurple
 import com.appcoreopc.getmyhome.ui.theme.SurfaceDark
 import com.appcoreopc.getmyhome.ui.theme.TextPrimary
 import com.appcoreopc.getmyhome.ui.theme.TextSecondary
+import ReportCheckbox;
 
 @Composable
 fun GetMyHomeApp(viewModel: HomeViewModel) {
@@ -50,8 +51,9 @@ fun GetMyHomeApp(viewModel: HomeViewModel) {
 
     LaunchedEffect(currentDestination) {
         if (currentDestination == AppDestinations.INSIGHTS) {
-            // TODO: Get actual user ID from login/session
             viewModel.fetchReports("user123")
+        } else if (currentDestination == AppDestinations.SETTINGS) {
+            viewModel.fetchUserProfile("user123")
         }
     }
 
@@ -86,7 +88,45 @@ fun GetMyHomeApp(viewModel: HomeViewModel) {
                     viewModel = viewModel
                 )
             }
+
             AppDestinations.INSIGHTS -> {
+                if (isLoading) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = PrimaryPurple)
+                    }
+                } else if (userReports.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("No reports found", color = TextSecondary, fontSize = 18.sp)
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+
+                        items(userReports) { report ->
+                            ReportCard(report = report)
+                        }
+
+                        item {
+                            Text("My Reports Header")
+                        }
+
+                        item {
+                            Text("My Reports Header2")
+                        }
+                    }
+                }
+            }
+            AppDestinations.SETTINGS -> {
                 if (isLoading) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -114,14 +154,6 @@ fun GetMyHomeApp(viewModel: HomeViewModel) {
                     }
                 }
             }
-            AppDestinations.SETTINGS -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("Settings", color = TextPrimary, fontSize = 24.sp)
-                }
-            }
         }
     }
 }
@@ -134,6 +166,9 @@ private fun ReportCard(report: UserReport) {
         shape = RoundedCornerShape(12.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
+            ReportCheckbox(
+                checked = false
+            )
             Text(
                 text = report.location,
                 color = PrimaryPurple,
