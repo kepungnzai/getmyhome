@@ -31,10 +31,6 @@
             android:name=".LoginActivity"
             android:exported="false"
             android:theme="@style/Theme.GetMyHome" />
-        <activity
-            android:name=".DetailActivity"
-            android:exported="false"
-            android:theme="@style/Theme.GetMyHome" />
     </application>
 
 </manifest>

@@ -3,7 +3,6 @@ package com.appcoreopc.getmyhome
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -52,7 +51,7 @@ fun GetMyHomeApp(viewModel: HomeViewModel) {
     LaunchedEffect(currentDestination) {
         if (currentDestination == AppDestinations.INSIGHTS) {
             // TODO: Get actual user ID from login/session
-            viewModel.fetchReports("user1")
+            viewModel.fetchReports("user123")
         }
     }
 
@@ -136,44 +135,24 @@ private fun ReportCard(report: UserReport) {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "Report #${report.reportId}",
+                text = report.location,
                 color = PrimaryPurple,
-                fontSize = 16.sp,
+                fontSize = 18.sp,
                 fontWeight = FontWeight.Bold
             )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = report.propertyType,
+                color = TextSecondary,
+                fontSize = 14.sp
+            )
             Spacer(modifier = Modifier.height(12.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                DetailItem(label = "Price", value = "${report.propertyPrice}")
-                DetailItem(label = "Price Increase", value = "${report.propertyPriceIncrease}")
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                DetailItem(label = "Amenities", value = "${report.proximityAmenities}")
-                DetailItem(label = "Schools", value = "${report.proximitySchools}")
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                DetailItem(label = "Train Station", value = "${report.proximityTrainStation}")
-                DetailItem(label = "Flood/Bushfire Risk", value = "${report.floodBushfireRisk}")
-            }
+            Text(
+                text = report.currentAnalysis,
+                color = TextPrimary,
+                fontSize = 14.sp
+            )
         }
-    }
-}
-
-@Composable
-private fun DetailItem(label: String, value: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(text = value, color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-        Text(text = label, color = TextSecondary, fontSize = 12.sp)
     }
 }
 

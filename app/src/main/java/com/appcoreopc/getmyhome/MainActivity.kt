@@ -35,19 +35,3 @@ class MainActivity : ComponentActivity() {
 
 
 
-//@dagger.hilt.android.AndroidEntryPoint
-//class DetailActivity : ComponentActivity() {
-//    private val viewModel: DetailViewModel by viewModels()
-//}
-//
-//@HiltViewModel
-//class DetailViewModel @Inject constructor(
-//    private val propertySearchBackendApi: PropertySearchBackendApi,
-//    private val graphQLClient: OkHttpClient
-//) : ViewModel() {
-//
-//    fun sayHi()
-//    {
-//        val test = propertySearchBackendApi.toString()
-//    }
-//}

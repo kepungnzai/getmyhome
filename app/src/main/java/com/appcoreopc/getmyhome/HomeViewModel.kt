@@ -189,14 +189,15 @@ class HomeViewModel @Inject constructor(
                     val graphQLQuery = JSONObject().apply {
                         put("query", """
                             query GetUserReports(${'$'}userId: String!) {
-                                reports(userId: ${'$'}userId) {
-                                    report_id
-                                    property_price
-                                    property_price_increase
-                                    proximity_amenities
-                                    proximity_schools
-                                    proximity_train_station
-                                    flood_bushfire_risk
+                                getReportsByUserId(userId: ${'$'}userId) {
+                                    status
+                                    userId
+                                    reports {
+                                      id
+                                      location
+                                      propertyType
+                                      currentAnalysis
+                                    }
                                 }
                             }
                         """.trimIndent())
@@ -217,18 +218,22 @@ class HomeViewModel @Inject constructor(
                     if (response.isSuccessful && responseBody != null) {
                         val jsonResponse = JSONObject(responseBody)
                         val data = jsonResponse.optJSONObject("data")
-                        val reportsArray = data?.optJSONArray("reports")
+                        val getReportsByUserId = data?.optJSONObject("getReportsByUserId")
+                        val reportsArray = getReportsByUserId?.optJSONArray("reports")
                         if (reportsArray != null) {
                             (0 until reportsArray.length()).map { i ->
                                 val report = reportsArray.getJSONObject(i)
                                 UserReport(
-                                    reportId = report.optString("report_id"),
-                                    propertyPrice = report.optInt("property_price"),
-                                    propertyPriceIncrease = report.optInt("property_price_increase"),
-                                    proximityAmenities = report.optInt("proximity_amenities"),
-                                    proximitySchools = report.optInt("proximity_schools"),
-                                    proximityTrainStation = report.optInt("proximity_train_station"),
-                                    floodBushfireRisk = report.optInt("flood_bushfire_risk")
+                                    reportId = report.optString("id"),
+                                    location = report.optString("location"),
+                                    propertyType = report.optString("propertyType"),
+                                    currentAnalysis = report.optString("currentAnalysis"),
+                                    propertyPrice = 0,
+                                    propertyPriceIncrease = 0,
+                                    proximityAmenities = 0,
+                                    proximitySchools = 0,
+                                    proximityTrainStation = 0,
+                                    floodBushfireRisk = 0
                                 )
                             }
                         } else {
