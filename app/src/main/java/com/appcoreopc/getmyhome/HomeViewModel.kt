@@ -23,6 +23,7 @@ import okhttp3.WebSocket
 import okhttp3.WebSocketListener
 import org.json.JSONObject
 import javax.inject.Inject
+import com.appcoreopc.getmyhome.data.local.UserProfile
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
@@ -36,8 +37,24 @@ class HomeViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    private val _userId = MutableStateFlow("")
+    val userId: StateFlow<String> = _userId.asStateFlow()
+
     private val _userReports = MutableStateFlow<List<UserReport>>(emptyList())
     val userReports: StateFlow<List<UserReport>> = _userReports.asStateFlow()
+
+    private val _userProfile = MutableStateFlow<List<UserProfile>>(emptyList())
+    val userProfile: StateFlow<List<UserProfile>> = _userProfile.asStateFlow()
+
+    fun updateReportChecked(reportId: String, isChecked: Boolean) {
+        _userReports.value = _userReports.value.map { report ->
+            if (report.reportId == reportId) {
+                report.copy(isChecked = isChecked)
+            } else {
+                report
+            }
+        }
+    }
 
     fun searchPropertyREST(location: String, propertyType: String) {
         viewModelScope.launch {
@@ -227,13 +244,7 @@ class HomeViewModel @Inject constructor(
                                     reportId = report.optString("id"),
                                     location = report.optString("location"),
                                     propertyType = report.optString("propertyType"),
-                                    currentAnalysis = report.optString("currentAnalysis"),
-                                    propertyPrice = 0,
-                                    propertyPriceIncrease = 0,
-                                    proximityAmenities = 0,
-                                    proximitySchools = 0,
-                                    proximityTrainStation = 0,
-                                    floodBushfireRisk = 0
+                                    currentAnalysis = report.optString("currentAnalysis")
                                 )
                             }
                         } else {
@@ -307,22 +318,24 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun fetchUserProfile(userId: String) {
+fun fetchUserProfile(userId: String) {
         viewModelScope.launch {
             try {
                 _isLoading.value = true
-                val reports = withContext(Dispatchers.IO) {
+                val profile = withContext(Dispatchers.IO) {
                     val graphQLQuery = JSONObject().apply {
                         put("query", """
-                            query GetUserReports(${'$'}userId: String!) {
-                                getReportsByUserId(userId: ${'$'}userId) {
+                            query GetUserProfile(${'$'}userId: String!) {
+                                getUserProfile(userId: ${'$'}userId) {
                                     status
                                     userId
-                                    reports {
-                                      id
-                                      location
-                                      propertyType
-                                      currentAnalysis
+                                    userProfileCriteria {
+                                      propertyPrice
+                                      propertyPriceIncrease
+                                      proximityAmenities
+                                      proximitySchools
+                                      proximityTrainStation
+                                      naturalHazardRisk
                                     }
                                 }
                             }
@@ -344,22 +357,18 @@ class HomeViewModel @Inject constructor(
                     if (response.isSuccessful && responseBody != null) {
                         val jsonResponse = JSONObject(responseBody)
                         val data = jsonResponse.optJSONObject("data")
-                        val getReportsByUserId = data?.optJSONObject("getReportsByUserId")
-                        val reportsArray = getReportsByUserId?.optJSONArray("reports")
-                        if (reportsArray != null) {
-                            (0 until reportsArray.length()).map { i ->
-                                val report = reportsArray.getJSONObject(i)
-                                UserReport(
-                                    reportId = report.optString("id"),
-                                    location = report.optString("location"),
-                                    propertyType = report.optString("propertyType"),
-                                    currentAnalysis = report.optString("currentAnalysis"),
-                                    propertyPrice = 0,
-                                    propertyPriceIncrease = 0,
-                                    proximityAmenities = 0,
-                                    proximitySchools = 0,
-                                    proximityTrainStation = 0,
-                                    floodBushfireRisk = 0
+                        val getUserProfile = data?.optJSONObject("getUserProfile")
+                        val criteriaArray = getUserProfile?.optJSONArray("userProfileCriteria")
+                        if (criteriaArray != null && criteriaArray.length() > 0) {
+                            (0 until criteriaArray.length()).map { i ->
+                                val criteria = criteriaArray.getJSONObject(i)
+                                UserProfile(
+                                    propertyPrice = criteria.optInt("propertyPrice"),
+                                    propertyPriceIncrease = criteria.optInt("propertyPriceIncrease"),
+                                    proximityAmenities = criteria.optInt("proximityAmenities"),
+                                    proximitySchools = criteria.optInt("proximitySchools"),
+                                    proximityTrainStation = criteria.optInt("proximityTrainStation"),
+                                    naturalHazardRisk = criteria.optInt("naturalHazardRisk")
                                 )
                             }
                         } else {
@@ -369,14 +378,18 @@ class HomeViewModel @Inject constructor(
                         emptyList()
                     }
                 }
-                _userReports.value = reports
+                _userProfile.value = profile
             } catch (e: Exception) {
                 e.printStackTrace()
-                _userReports.value = emptyList()
+                _userProfile.value = emptyList()
             } finally {
                 _isLoading.value = false
             }
         }
+    }
+
+    fun setUserId(userId: String) {
+        _userId.value = userId
     }
 }
 

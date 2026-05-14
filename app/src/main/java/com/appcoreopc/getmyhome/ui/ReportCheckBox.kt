@@ -10,7 +10,6 @@ import androidx.compose.runtime.setValue
 
 @Composable
 fun ReportCheckbox(checked: Boolean) {
-    // 1. Create the state
     var isChecked by remember { mutableStateOf(false) }
 
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -19,6 +18,5 @@ fun ReportCheckbox(checked: Boolean) {
             checked = isChecked,
             onCheckedChange = { isChecked = it } // Update state when clicked
         )
-        Text("I agree to the terms and conditions")
     }
 }

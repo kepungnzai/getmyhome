@@ -52,7 +52,6 @@ fun HomeUIComponentsBuild(
         start = Offset(0f, 0f),
         end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
     )
-
     Column(
         modifier = Modifier
             .fillMaxSize()
