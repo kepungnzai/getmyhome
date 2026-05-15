@@ -27,7 +27,7 @@ import com.appcoreopc.getmyhome.data.local.UserProfile
 import com.appcoreopc.getmyhome.ui.theme.PrimaryPurple
 import com.appcoreopc.getmyhome.ui.theme.TextPrimary
 import com.appcoreopc.getmyhome.ui.theme.TextSecondary
-
+import com.appcoreopc.getmyhome.components.UserProfileCard
 @Composable
 fun SettingsScreen(
     isLoading: Boolean,
@@ -77,14 +77,14 @@ fun SettingsScreen(
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = "Set what is important",
+                                text = "Key metrics",
                                 color = TextPrimary,
                                 fontSize = 28.sp,
                                 fontWeight = FontWeight.Bold
                             )
                             Spacer(modifier = Modifier.height(16.dp))
                             Text(
-                                text = "Pick from the list",
+                                text = "Adjust the value in the list",
                                 color = TextPrimary.copy(alpha = 0.7f),
                                 fontSize = 14.sp
                             )

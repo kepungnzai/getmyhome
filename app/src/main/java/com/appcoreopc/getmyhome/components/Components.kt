@@ -1,0 +1,188 @@
+package com.appcoreopc.getmyhome.components
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.appcoreopc.getmyhome.HomeViewModel
+import com.appcoreopc.getmyhome.data.local.UserProfile
+import com.appcoreopc.getmyhome.data.local.UserReport
+import com.appcoreopc.getmyhome.ui.theme.PrimaryPurple
+import com.appcoreopc.getmyhome.ui.theme.SurfaceDark
+import com.appcoreopc.getmyhome.ui.theme.TextPrimary
+import com.appcoreopc.getmyhome.ui.theme.TextSecondary
+import com.appcoreopc.getmyhome.ui.theme.PurpleGrey40
+
+@Composable
+fun InsightCard(report: UserReport, viewModel: HomeViewModel) {
+    var isExpanded by remember { mutableStateOf(false) }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = SurfaceDark),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(
+                    checked = report.isChecked,
+                    onCheckedChange = { isChecked ->
+                        viewModel.updateReportChecked(report.reportId, isChecked)
+                    }
+                )
+                Text(
+                    text = report.location,
+                    color = PrimaryPurple,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = report.propertyType,
+                color = TextSecondary,
+                fontSize = 14.sp
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Column {
+                Text(
+                    text = report.currentAnalysis,
+                    color = TextPrimary,
+                    fontSize = 14.sp,
+                    maxLines = if (isExpanded) Int.MAX_VALUE else 5
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    TextButton(
+                        onClick = { isExpanded = !isExpanded },
+                        modifier = Modifier.align(Alignment.BottomEnd)
+                    ) {
+                        Text(
+                            text = if (isExpanded) "Show less ↑" else "Show more ↓",
+                            color = PrimaryPurple,
+                            fontSize = 12.sp
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+@Composable
+fun UserProfileCard(userProfile: UserProfile) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = SurfaceDark),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            ProfileItemRating(label = "Property Price", value = userProfile.propertyPrice)
+            ProfileItemRating(
+                label = "Property Price Increase",
+                value = userProfile.propertyPriceIncrease
+            )
+            ProfileItemRating(
+                label = "Proximity to Amenities",
+                value = userProfile.proximityAmenities
+            )
+            ProfileItemRating(label = "Proximity to Schools", value = userProfile.proximitySchools)
+            ProfileItemRating(
+                label = "Proximity to Train Station",
+                value = userProfile.proximityTrainStation
+            )
+            ProfileItemRating(label = "Natural Hazard Risk", value = userProfile.naturalHazardRisk)
+        }
+    }
+}
+
+@Composable
+fun ProfileItem(label: String, value: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            color = TextSecondary,
+            fontSize = 14.sp
+        )
+        Text(
+            text = value,
+            color = PrimaryPurple,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+@Composable
+fun ProfileItemRating(label: String, value: Int) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            color = TextSecondary,
+            fontSize = 14.sp
+        )
+        RatingBar(rating = value)
+    }
+}
+
+@Composable
+fun RatingBar(rating: Int) {
+    val color = when (rating) {
+        5 -> Color(0xFFFF3B30)
+        4 -> Color(0xFFFF9500)
+        3 -> Color(0xFFFF9500)
+        else -> Color(0xFFFFD60A)
+    }
+
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        repeat(5) { index ->
+            Box(
+                modifier = Modifier
+                    .width(24.dp)
+                    .height(8.dp)
+                    .background(
+                        color = if (index < rating) color else Color.Gray.copy(alpha = 0.3f),
+                        shape = RoundedCornerShape(4.dp)
+                    )
+            )
+        }
+    }
+}

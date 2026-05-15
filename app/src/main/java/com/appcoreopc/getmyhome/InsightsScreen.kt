@@ -27,6 +27,7 @@ import com.appcoreopc.getmyhome.data.local.UserReport
 import com.appcoreopc.getmyhome.ui.theme.PrimaryPurple
 import com.appcoreopc.getmyhome.ui.theme.TextPrimary
 import com.appcoreopc.getmyhome.ui.theme.TextSecondary
+import com.appcoreopc.getmyhome.components.InsightCard
 
 @Composable
 fun InsightsScreen(
@@ -95,7 +96,7 @@ fun InsightsScreen(
             }
 
             items(userReports) { report ->
-                ReportCard(report = report, viewModel = viewModel)
+                InsightCard(report = report, viewModel = viewModel)
             }
         }
     }
