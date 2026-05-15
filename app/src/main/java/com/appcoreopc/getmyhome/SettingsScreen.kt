@@ -94,7 +94,7 @@ fun SettingsScreen(
             }
             item {
                 Text(
-                    text = "User Profile",
+                    text = "What matters to me are",
                     color = PrimaryPurple,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold
