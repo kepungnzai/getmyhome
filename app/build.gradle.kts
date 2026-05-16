@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
     alias(libs.plugins.kotlin.android)
+    id("com.google.gms.google-services") apply false
 }
 
 android {
@@ -66,6 +67,8 @@ dependencies {
     // Location
     implementation(libs.play.services.location)
     implementation(libs.kotlinx.coroutines.play.services)
+    // Google Sign-In
+    implementation("com.google.android.gms:play-services-auth:20.7.0")
 
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))

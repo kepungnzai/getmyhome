@@ -1,5 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="RunManager" selected="Android App.app">
+    <configuration name="app" type="AndroidRunConfigurationType" factoryName="Android App">
+      <module name="app" />
+      <option name="DEPLOY" value="true" />
+      <option name="INSTALL" value="true" />
+      <option name="LAUNCH" value="true" />
+      <option name="DEBUG" value="false" />
+      <method v="2">
+        <option name="com.android.tools.idea.run.processor.InvokeTask" value="makeReady" />
+        <option name="com.android.tools.idea.run.processor.InvokeTask" value="preBuild" />
+        <option name="com.android.tools.idea.run.processor.InvokeTask" value="compile" />
+        <option name="com.android.tools.idea.run.processor.InvokeTask" value="pack" />
+        <option name="com.android.tools.idea.run.processor.InvokeTask" value="deploy" />
+      </method>
+    </configuration>
+  </component>
   <component name="RunConfigurationProducerService">
     <option name="ignoredProducers">
       <set>

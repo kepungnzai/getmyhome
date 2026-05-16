@@ -97,22 +97,6 @@ public fun LoginScreen(
         )
 
         Spacer(modifier = Modifier.height(32.dp))
-
-//        Button(
-//            onClick = { onCreateAccount(username, password) },
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .height(56.dp),
-//            colors = ButtonDefaults.buttonColors(
-//                containerColor = PrimaryPurple
-//            ),
-//            shape = RoundedCornerShape(12.dp)
-//        ) {
-//            Text("Create Account", fontSize = 16.sp, fontWeight = FontWeight.Medium)
-//        }
-//
-//        Spacer(modifier = Modifier.height(16.dp))
-
         Button(
             onClick = { onGoogleSignIn() },
             modifier = Modifier
