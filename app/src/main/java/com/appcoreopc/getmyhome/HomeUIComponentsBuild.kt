@@ -36,6 +36,17 @@ import com.appcoreopc.getmyhome.ui.theme.SurfaceDark
 import com.appcoreopc.getmyhome.ui.theme.TextPrimary
 import com.appcoreopc.getmyhome.ui.theme.TextSecondary
 import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import android.Manifest
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.widthIn
 
 @Composable
 fun HomeUIComponentsBuild(
@@ -47,151 +58,226 @@ fun HomeUIComponentsBuild(
     reportContent: String?,
     viewModel: HomeViewModel
 ) {
+    val suburbSuggestions by viewModel.suburbSuggestions.collectAsState()
+
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        if (permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+            permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        ) {
+            viewModel.detectLocation { detectedLocation ->
+                onLocationChange(detectedLocation)
+            }
+        }
+    }
+
     val gradientBrush = Brush.linearGradient(
         colors = listOf(CardGradientStart, CardGradientEnd),
         start = Offset(0f, 0f),
         end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
     )
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(BackgroundDark)
-            .padding(16.dp)
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // Balance Card
-        Card(
+//        Card(
+//            modifier = Modifier
+//                .widthIn(max = 600.dp)
+//                .fillMaxWidth()
+//                .padding(bottom = 24.dp, top = 10.dp),
+//            colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+//            shape = RoundedCornerShape(20.dp)
+//        ) {
+//            Box(
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .background(gradientBrush)
+//                    .padding(24.dp)
+//            ) {
+//                Column {
+//                    Text(
+//                        text = "Search Properties",
+//                        color = TextPrimary.copy(alpha = 0.8f),
+//                        fontSize = 14.sp
+//                    )
+//                    Spacer(modifier = Modifier.height(8.dp))
+//                    Text(
+//                        text = "Get My Home",
+//                        color = TextPrimary,
+//                        fontSize = 28.sp,
+//                        fontWeight = FontWeight.Bold
+//                    )
+//                    Spacer(modifier = Modifier.height(16.dp))
+//                    Text(
+//                        text = "Find your dream home",
+//                        color = TextPrimary.copy(alpha = 0.7f),
+//                        fontSize = 14.sp
+//                    )
+//                }
+//            }
+//        }
+
+        // Search Form
+        Column(
             modifier = Modifier
+                .widthIn(max = 450.dp)
                 .fillMaxWidth()
-                .padding(bottom = 24.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-            shape = RoundedCornerShape(20.dp)
+                .weight(1f),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(gradientBrush)
-                    .padding(24.dp)
+            Column(
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Column {
-                    Text(
-                        text = "Search Properties",
-                        color = TextPrimary.copy(alpha = 0.8f),
-                        fontSize = 14.sp
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Search Properties",
+                    color = TextPrimary,
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "Find your dream home",
+                    color = TextPrimary.copy(alpha = 0.7f),
+                    fontSize = 14.sp
+                )
+
+                OutlinedTextField(
+                    value = location,
+                    onValueChange = {
+                        onLocationChange(it)
+                        viewModel.fetchSuburbSuggestions(it)
+                    },
+                    label = { Text("Location", color = TextSecondary) },
+                    modifier = Modifier.fillMaxWidth(),
+                    trailingIcon = {
+                        IconButton(onClick = {
+                            locationPermissionLauncher.launch(
+                                arrayOf(
+                                    Manifest.permission.ACCESS_FINE_LOCATION,
+                                    Manifest.permission.ACCESS_COARSE_LOCATION
+                                )
+                            )
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.LocationOn,
+                                contentDescription = "Detect Location",
+                                tint = PrimaryPurple
+                            )
+                        }
+                    },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = TextPrimary,
+                        unfocusedTextColor = TextPrimary,
+                        focusedBorderColor = PrimaryPurple,
+                        unfocusedBorderColor = TextSecondary,
+                        cursorColor = PrimaryPurple,
+                        focusedContainerColor = SurfaceDark,
+                        unfocusedContainerColor = SurfaceDark
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Get My Home",
-                        color = TextPrimary,
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.Bold
+                )
+
+                if (suburbSuggestions.isNotEmpty()) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp),
+                        colors = CardDefaults.cardColors(containerColor = SurfaceDark),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                    ) {
+                        Column {
+                            suburbSuggestions.forEach { suggestion ->
+                                Text(
+                                    text = suggestion,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            onLocationChange(suggestion)
+                                            viewModel.clearSuburbSuggestions()
+                                        }
+                                        .padding(16.dp),
+                                    color = TextPrimary
+                                )
+                            }
+                        }
+                    }
+                }
+
+                OutlinedTextField(
+                    value = propertyType,
+                    onValueChange = onPropertyTypeChange,
+                    label = { Text("Property Type", color = TextSecondary) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = TextPrimary,
+                        unfocusedTextColor = TextPrimary,
+                        focusedBorderColor = PrimaryPurple,
+                        unfocusedBorderColor = TextSecondary,
+                        cursorColor = PrimaryPurple,
+                        focusedContainerColor = SurfaceDark,
+                        unfocusedContainerColor = SurfaceDark
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "Find your dream home",
-                        color = TextPrimary.copy(alpha = 0.7f),
-                        fontSize = 14.sp
-                    )
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Button(
+                    onClick = {
+                        when (useGraphQL) {
+                            0 -> viewModel.searchPropertyGraphQL(location, propertyType)
+                            1 -> viewModel.analyzeStreamGraphQL(location, propertyType)
+                            else -> viewModel.searchPropertyREST(location, propertyType)
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = PrimaryPurple
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Search Now", fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                }
+                Button(
+                    onClick = { viewModel.generateReportGraphQL() },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = PrimaryPurple
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Text("Report", fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                    }
                 }
             }
         }
 
-        // Search Form
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            OutlinedTextField(
-                value = location,
-                onValueChange = onLocationChange,
-                label = { Text("Location", color = TextSecondary) },
-                modifier = Modifier.fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = TextPrimary,
-                    unfocusedTextColor = TextPrimary,
-                    focusedBorderColor = PrimaryPurple,
-                    unfocusedBorderColor = TextSecondary,
-                    cursorColor = PrimaryPurple,
-                    focusedContainerColor = SurfaceDark,
-                    unfocusedContainerColor = SurfaceDark
-                )
-            )
-
-            OutlinedTextField(
-                value = propertyType,
-                onValueChange = onPropertyTypeChange,
-                label = { Text("Property Type", color = TextSecondary) },
-                modifier = Modifier.fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = TextPrimary,
-                    unfocusedTextColor = TextPrimary,
-                    focusedBorderColor = PrimaryPurple,
-                    unfocusedBorderColor = TextSecondary,
-                    cursorColor = PrimaryPurple,
-                    focusedContainerColor = SurfaceDark,
-                    unfocusedContainerColor = SurfaceDark
-                )
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-
-            }
-
-            Button(
-                onClick = {
-                    when (useGraphQL) {
-                        0 -> viewModel.searchPropertyGraphQL(location, propertyType)
-                        1 -> viewModel.analyzeStreamGraphQL(location, propertyType)
-                        else -> viewModel.searchPropertyREST(location, propertyType)
-                    }
-                },
+        if (reportContent != null) {
+            LazyColumn(
                 modifier = Modifier
+                    .widthIn(max = 600.dp)
                     .fillMaxWidth()
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = PrimaryPurple
-                ),
-                shape = RoundedCornerShape(12.dp)
+                    .height(300.dp)
+                    .padding(top = 16.dp)
             ) {
-                Text("Search Now", fontSize = 16.sp, fontWeight = FontWeight.Medium)
-            }
-
-            Button(
-                onClick = { viewModel.generateReportGraphQL() },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = PrimaryPurple
-                ),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                )
-                {
-                    Text("Report", fontSize = 16.sp, fontWeight = FontWeight.Medium)
-                }
-            }
-
-            if (reportContent != null) {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(300.dp)
-                        .padding(top = 16.dp)
-                ) {
-                    items(reportContent.split("\n")) { line ->
-                        Text(
-                            text = line,
-                            color = TextPrimary,
-                            modifier = Modifier.padding(vertical = 4.dp)
-                        )
-                    }
+                items(reportContent.split("\n")) { line ->
+                    Text(
+                        text = line,
+                        color = TextPrimary,
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    )
                 }
             }
         }

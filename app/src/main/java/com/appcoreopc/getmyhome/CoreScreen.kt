@@ -32,8 +32,9 @@ fun GetMyHomeApp(viewModel: HomeViewModel) {
     val isLoading by viewModel.isLoading.collectAsState()
     val userReports by viewModel.userReports.collectAsState()
     val userProfile by viewModel.userProfile.collectAsState()
-    viewModel.setUserId("user-123")
     val userId by viewModel.userId.collectAsState()
+
+    viewModel.setUserId("user-123")
 
     val gradientBrush = Brush.linearGradient(
         colors = listOf(CardGradientStart, CardGradientEnd),
@@ -100,7 +101,10 @@ fun GetMyHomeApp(viewModel: HomeViewModel) {
                 SettingsScreen(
                     isLoading = isLoading,
                     userProfile = userProfile,
-                    gradientBrush = gradientBrush
+                    gradientBrush = gradientBrush,
+                    onUpdateClick = { updatedProfile ->
+                        viewModel.saveUserProfile(userId, updatedProfile)
+                    }
                 )
             }
         }

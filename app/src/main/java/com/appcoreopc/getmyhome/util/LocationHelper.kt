@@ -5,7 +5,9 @@ import android.content.Context
 import android.location.Geocoder
 import com.google.android.gms.location.LocationServices
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 import java.util.Locale
 import javax.inject.Inject
 
@@ -33,6 +35,19 @@ class LocationHelper @Inject constructor(
             }
         } catch (e: Exception) {
             "Error detecting location"
+        }
+    }
+
+    suspend fun getSuburbSuggestions(query: String): List<String> {
+        return withContext(Dispatchers.IO) {
+            try {
+                if (query.length < 3) return@withContext emptyList()
+                val geocoder = Geocoder(context, Locale.getDefault())
+                val addresses = geocoder.getFromLocationName(query, 5)
+                addresses?.mapNotNull { it.locality ?: it.subLocality ?: it.featureName }?.distinct() ?: emptyList()
+            } catch (e: Exception) {
+                emptyList()
+            }
         }
     }
 }

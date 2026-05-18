@@ -1,15 +1,17 @@
 package com.appcoreopc.getmyhome.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -94,28 +96,39 @@ fun InsightCard(report: UserReport, viewModel: HomeViewModel) {
 
 
 @Composable
-fun UserProfileCard(userProfile: UserProfile) {
+fun UserProfileCard(
+    userProfile: UserProfile,
+    onPropertyPriceChange: (Int) -> Unit,
+    onPropertyPriceIncreaseChange: (Int) -> Unit,
+    onProximityAmenitiesChange: (Int) -> Unit,
+    onProximitySchoolsChange: (Int) -> Unit,
+    onProximityTrainStationChange: (Int) -> Unit,
+    onNaturalHazardRiskChange: (Int) -> Unit
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = SurfaceDark),
         shape = RoundedCornerShape(12.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            ProfileItemRating(label = "Property Price", value = userProfile.propertyPrice)
+            ProfileItemRating(label = "Property Price", value = userProfile.propertyPrice, onValueChange = onPropertyPriceChange)
             ProfileItemRating(
                 label = "Property Price Increase",
-                value = userProfile.propertyPriceIncrease
+                value = userProfile.propertyPriceIncrease,
+                onValueChange = onPropertyPriceIncreaseChange
             )
             ProfileItemRating(
                 label = "Proximity to Amenities",
-                value = userProfile.proximityAmenities
+                value = userProfile.proximityAmenities,
+                onValueChange = onProximityAmenitiesChange
             )
-            ProfileItemRating(label = "Proximity to Schools", value = userProfile.proximitySchools)
+            ProfileItemRating(label = "Proximity to Schools", value = userProfile.proximitySchools, onValueChange = onProximitySchoolsChange)
             ProfileItemRating(
                 label = "Proximity to Train Station",
-                value = userProfile.proximityTrainStation
+                value = userProfile.proximityTrainStation,
+                onValueChange = onProximityTrainStationChange
             )
-            ProfileItemRating(label = "Natural Hazard Risk", value = userProfile.naturalHazardRisk)
+            ProfileItemRating(label = "Natural Hazard Risk", value = userProfile.naturalHazardRisk, onValueChange = onNaturalHazardRiskChange)
         }
     }
 }
@@ -144,7 +157,12 @@ fun ProfileItem(label: String, value: String) {
 }
 
 @Composable
-fun ProfileItemRating(label: String, value: Int) {
+fun ProfileItemRating(label: String, value: Int, onValueChange: (Int) -> Unit) {
+    val color = when (value) {
+        4, 5 -> Color(0xFFFF3B30)
+        2, 3 -> Color(0xFFFF9500)
+        else -> Color(0xFFFFD60A)
+    }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -155,34 +173,38 @@ fun ProfileItemRating(label: String, value: Int) {
         Text(
             text = label,
             color = TextSecondary,
-            fontSize = 14.sp
+            fontSize = 14.sp,
+            modifier = Modifier.weight(1f)
         )
-        RatingBar(rating = value)
-    }
-}
-
-@Composable
-fun RatingBar(rating: Int) {
-    val color = when (rating) {
-        5 -> Color(0xFFFF3B30)
-        4 -> Color(0xFFFF9500)
-        3 -> Color(0xFFFF9500)
-        else -> Color(0xFFFFD60A)
-    }
-
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        repeat(5) { index ->
-            Box(
-                modifier = Modifier
-                    .width(24.dp)
-                    .height(8.dp)
-                    .background(
-                        color = if (index < rating) color else Color.Gray.copy(alpha = 0.3f),
-                        shape = RoundedCornerShape(4.dp)
-                    )
-            )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            (0..5).forEach { index ->
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .background(
+                            color = if (index == value) color else Color.Gray.copy(alpha = 0.3f),
+                            shape = RoundedCornerShape(4.dp)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    TextButton(
+                        onClick = { onValueChange(index) },
+                        modifier = Modifier.size(32.dp),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Text(
+                            text = index.toString(),
+                            color = if (index == value) Color.White else Color.Gray,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
         }
     }
 }
+

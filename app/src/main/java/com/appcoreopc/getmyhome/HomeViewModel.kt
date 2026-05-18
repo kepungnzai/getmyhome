@@ -24,11 +24,13 @@ import okhttp3.WebSocketListener
 import org.json.JSONObject
 import javax.inject.Inject
 import com.appcoreopc.getmyhome.data.local.UserProfile
+import com.appcoreopc.getmyhome.util.LocationHelper
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val propertySearchBackendApi: PropertySearchBackendApi,
-    private val graphQLClient: OkHttpClient
+    private val graphQLClient: OkHttpClient,
+    private val locationHelper: LocationHelper
 ) : ViewModel() {
 
     private val _reportContent = MutableStateFlow<String?>(null)
@@ -46,6 +48,9 @@ class HomeViewModel @Inject constructor(
     private val _userProfile = MutableStateFlow<List<UserProfile>>(emptyList())
     val userProfile: StateFlow<List<UserProfile>> = _userProfile.asStateFlow()
 
+    private val _suburbSuggestions = MutableStateFlow<List<String>>(emptyList())
+    val suburbSuggestions: StateFlow<List<String>> = _suburbSuggestions.asStateFlow()
+
     fun updateReportChecked(reportId: String, isChecked: Boolean) {
         _userReports.value = _userReports.value.map { report ->
             if (report.reportId == reportId) {
@@ -54,6 +59,23 @@ class HomeViewModel @Inject constructor(
                 report
             }
         }
+    }
+
+    fun detectLocation(onLocationDetected: (String) -> Unit) {
+        viewModelScope.launch {
+            val location = locationHelper.getCurrentStateOrCountry()
+            onLocationDetected(location)
+        }
+    }
+
+    fun fetchSuburbSuggestions(query: String) {
+        viewModelScope.launch {
+            _suburbSuggestions.value = locationHelper.getSuburbSuggestions(query)
+        }
+    }
+
+    fun clearSuburbSuggestions() {
+        _suburbSuggestions.value = emptyList()
     }
 
     fun searchPropertyREST(location: String, propertyType: String) {
@@ -390,6 +412,76 @@ fun fetchUserProfile(userId: String) {
 
     fun setUserId(userId: String) {
         _userId.value = userId
+    }
+
+    fun saveUserProfile(userId: String, profile: UserProfile) {
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+                withContext(Dispatchers.IO) {
+                    val graphQLQuery = JSONObject().apply {
+                        put("query", """
+                            mutation SaveUserProfile(${'$'}userId: String!, ${'$'}profile: UserProfileInput!) {
+                                saveUserProfile(userId: ${'$'}userId, profile: ${'$'}profile) {
+                                    status
+                                    userId
+                                    userProfileCriteria {
+                                        propertyPrice
+                                        propertyPriceIncrease
+                                        proximityAmenities
+                                        proximitySchools
+                                        proximityTrainStation
+                                        naturalHazardRisk
+                                    }
+                                }
+                            }
+                        """.trimIndent())
+                        put("variables", JSONObject().apply {
+                            put("userId", userId)
+                            put("profile", JSONObject().apply {
+                                put("propertyPrice", profile.propertyPrice)
+                                put("propertyPriceIncrease", profile.propertyPriceIncrease)
+                                put("proximityAmenities", profile.proximityAmenities)
+                                put("proximitySchools", profile.proximitySchools)
+                                put("proximityTrainStation", profile.proximityTrainStation)
+                                put("naturalHazardRisk", profile.naturalHazardRisk)
+                            })
+                        })
+                    }
+
+                    val requestBody = graphQLQuery.toString().toRequestBody("application/json".toMediaType())
+                    val request = Request.Builder()
+                        .url(GRAPHQL_ENDPOINT)
+                        .post(requestBody)
+                        .build()
+
+                    val response = graphQLClient.newCall(request).execute()
+                    val responseBody = response.body?.string()
+
+                    if (response.isSuccessful && responseBody != null) {
+                        val jsonResponse = JSONObject(responseBody)
+                        val saveUserProfile = jsonResponse.optJSONObject("data")?.optJSONObject("saveUserProfile")
+                        val criteriaArray = saveUserProfile?.optJSONArray("userProfileCriteria")
+                        if (criteriaArray != null && criteriaArray.length() > 0) {
+                            val updatedProfile = criteriaArray.getJSONObject(0)
+                            val newProfile = UserProfile(
+                                propertyPrice = updatedProfile.optInt("propertyPrice"),
+                                propertyPriceIncrease = updatedProfile.optInt("propertyPriceIncrease"),
+                                proximityAmenities = updatedProfile.optInt("proximityAmenities"),
+                                proximitySchools = updatedProfile.optInt("proximitySchools"),
+                                proximityTrainStation = updatedProfile.optInt("proximityTrainStation"),
+                                naturalHazardRisk = updatedProfile.optInt("naturalHazardRisk")
+                            )
+                            _userProfile.value = listOf(newProfile)
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                _isLoading.value = false
+            }
+        }
     }
 }
 

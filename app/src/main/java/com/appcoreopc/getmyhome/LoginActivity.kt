@@ -36,6 +36,13 @@ class LoginActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        val account = GoogleSignIn.getLastSignedInAccount(this)
+        if (account != null) {
+            startActivity(Intent(this@LoginActivity, MainActivity::class.java))
+            finish()
+            return
+        }
+
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestEmail()
             .build()

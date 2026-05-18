@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.sp
 import com.appcoreopc.getmyhome.ui.theme.BackgroundDark
 import com.appcoreopc.getmyhome.ui.theme.TextPrimary
 import com.appcoreopc.getmyhome.ui.theme.GetMyHomeTheme
+import com.google.android.gms.auth.api.signin.GoogleSignIn
 import kotlinx.coroutines.delay
 
 class SplashActivity : ComponentActivity() {
@@ -39,17 +40,24 @@ class SplashActivity : ComponentActivity() {
                     onNavigateToLogin = {
                         startActivity(Intent(this@SplashActivity, LoginActivity::class.java))
                         finish()
-                    }
+                    },
+                    checkUserAccount = ::checkUserAccount
                 )
             }
         }
+    }
+
+    fun checkUserAccount(): Boolean {
+        val account = GoogleSignIn.getLastSignedInAccount(this)
+        return account != null
     }
 }
 
 @Composable
 fun SplashScreen(
     onNavigateToMain: () -> Unit,
-    onNavigateToLogin: () -> Unit
+    onNavigateToLogin: () -> Unit,
+    checkUserAccount: () -> Boolean
 ) {
     Box(
         modifier = Modifier
@@ -77,6 +85,3 @@ fun SplashScreen(
     }
 }
 
-private fun checkUserAccount(): Boolean {
-    return false
-}
