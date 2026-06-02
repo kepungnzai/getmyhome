@@ -25,6 +25,7 @@ import org.json.JSONObject
 import javax.inject.Inject
 import com.appcoreopc.getmyhome.data.local.UserProfile
 import com.appcoreopc.getmyhome.util.LocationHelper
+import com.appcoreopc.getmyhome.data.const.AppDestinations
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
@@ -47,6 +48,14 @@ class HomeViewModel @Inject constructor(
 
     private val _userProfile = MutableStateFlow<List<UserProfile>>(emptyList())
     val userProfile: StateFlow<List<UserProfile>> = _userProfile.asStateFlow()
+
+    private val _notificationTitle = MutableStateFlow<String?>("GetMyHome Notification")
+    val notificationTitle: StateFlow<String?> = _notificationTitle.asStateFlow()
+
+    private val _notificationMessage = MutableStateFlow<String?>(null)
+    val notificationMessage: StateFlow<String?> = _notificationMessage.asStateFlow()
+    private val _currentDestination = MutableStateFlow(AppDestinations.HOME)
+    val currentDestination: StateFlow<AppDestinations> = _currentDestination.asStateFlow()
 
     private val _suburbSuggestions = MutableStateFlow<List<String>>(emptyList())
     val suburbSuggestions: StateFlow<List<String>> = _suburbSuggestions.asStateFlow()
@@ -412,6 +421,15 @@ fun fetchUserProfile(userId: String) {
 
     fun setUserId(userId: String) {
         _userId.value = userId
+    }
+
+    fun setNotificationData(title: String?, message: String?) {
+        _notificationTitle.value = title
+        _notificationMessage.value = message
+    }
+
+    fun navigateTo(destination: AppDestinations) {
+        _currentDestination.value = destination
     }
 
     fun saveUserProfile(userId: String, profile: UserProfile) {

@@ -22,9 +22,14 @@ import com.appcoreopc.getmyhome.ui.theme.CardGradientEnd
 import com.appcoreopc.getmyhome.ui.theme.CardGradientStart
 import androidx.compose.runtime.saveable.rememberSaveable
 
+import com.appcoreopc.getmyhome.components.NotificationViewer
+
 @Composable
 fun GetMyHomeApp(viewModel: HomeViewModel) {
-    var currentDestination by remember { mutableStateOf(AppDestinations.HOME) }
+    val currentDestination by viewModel.currentDestination.collectAsState()
+    val notificationTitle by viewModel.notificationTitle.collectAsState()
+    val notificationMessage by viewModel.notificationMessage.collectAsState()
+    
     var location by rememberSaveable { mutableStateOf("") }
     var propertyType by rememberSaveable { mutableStateOf("") }
     var useGraphQL by rememberSaveable { mutableStateOf(1) }
@@ -52,7 +57,7 @@ fun GetMyHomeApp(viewModel: HomeViewModel) {
 
     NavigationSuiteScaffold(
         navigationSuiteItems = {
-            AppDestinations.entries.forEach {
+            AppDestinations.entries.filter { it != AppDestinations.NOTIFICATION_VIEWER }.forEach {
                 item(
                     icon = {
                         Icon(
@@ -68,7 +73,7 @@ fun GetMyHomeApp(viewModel: HomeViewModel) {
                         )
                     },
                     selected = it == currentDestination,
-                    onClick = { currentDestination = it },
+                    onClick = { viewModel.navigateTo(it) },
                 )
             }
         },
@@ -104,6 +109,16 @@ fun GetMyHomeApp(viewModel: HomeViewModel) {
                     gradientBrush = gradientBrush,
                     onUpdateClick = { updatedProfile ->
                         viewModel.saveUserProfile(userId, updatedProfile)
+                    }
+                )
+            }
+            AppDestinations.NOTIFICATION_VIEWER -> {
+                NotificationViewer(
+                    title = notificationTitle,
+                    message = notificationMessage,
+                    onAcknowledge = {
+                        viewModel.navigateTo(AppDestinations.HOME)
+                        viewModel.setNotificationData(null, null)
                     }
                 )
             }

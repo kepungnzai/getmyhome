@@ -70,6 +70,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.play.services)
     // Google Sign-In
     implementation("com.google.android.gms:play-services-auth:20.7.0")
+    implementation(libs.firebase.messaging)
 
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))

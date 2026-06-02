@@ -24,7 +24,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -35,7 +34,6 @@ import com.appcoreopc.getmyhome.ui.theme.PrimaryPurple
 import com.appcoreopc.getmyhome.ui.theme.SurfaceDark
 import com.appcoreopc.getmyhome.ui.theme.TextPrimary
 import com.appcoreopc.getmyhome.ui.theme.TextSecondary
-import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material.icons.Icons
@@ -47,7 +45,15 @@ import androidx.activity.result.contract.ActivityResultContracts
 import android.Manifest
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeUIComponentsBuild(
     location: String,
@@ -85,43 +91,6 @@ fun HomeUIComponentsBuild(
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Balance Card
-//        Card(
-//            modifier = Modifier
-//                .widthIn(max = 600.dp)
-//                .fillMaxWidth()
-//                .padding(bottom = 24.dp, top = 10.dp),
-//            colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-//            shape = RoundedCornerShape(20.dp)
-//        ) {
-//            Box(
-//                modifier = Modifier
-//                    .fillMaxWidth()
-//                    .background(gradientBrush)
-//                    .padding(24.dp)
-//            ) {
-//                Column {
-//                    Text(
-//                        text = "Search Properties",
-//                        color = TextPrimary.copy(alpha = 0.8f),
-//                        fontSize = 14.sp
-//                    )
-//                    Spacer(modifier = Modifier.height(8.dp))
-//                    Text(
-//                        text = "Get My Home",
-//                        color = TextPrimary,
-//                        fontSize = 28.sp,
-//                        fontWeight = FontWeight.Bold
-//                    )
-//                    Spacer(modifier = Modifier.height(16.dp))
-//                    Text(
-//                        text = "Find your dream home",
-//                        color = TextPrimary.copy(alpha = 0.7f),
-//                        fontSize = 14.sp
-//                    )
-//                }
-//            }
-//        }
 
         // Search Form
         Column(
@@ -210,21 +179,45 @@ fun HomeUIComponentsBuild(
                     }
                 }
 
-                OutlinedTextField(
-                    value = propertyType,
-                    onValueChange = onPropertyTypeChange,
-                    label = { Text("Property Type", color = TextSecondary) },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = TextPrimary,
-                        unfocusedTextColor = TextPrimary,
-                        focusedBorderColor = PrimaryPurple,
-                        unfocusedBorderColor = TextSecondary,
-                        cursorColor = PrimaryPurple,
-                        focusedContainerColor = SurfaceDark,
-                        unfocusedContainerColor = SurfaceDark
+                var isPropertyTypeDropdownExpanded by remember { mutableStateOf(false) }
+                ExposedDropdownMenuBox(
+                    expanded = isPropertyTypeDropdownExpanded,
+                    onExpandedChange = { isPropertyTypeDropdownExpanded = !isPropertyTypeDropdownExpanded },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedTextField(
+                        value = propertyType,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Property Type", color = TextSecondary) },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isPropertyTypeDropdownExpanded) },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = TextPrimary,
+                            unfocusedTextColor = TextPrimary,
+                            focusedBorderColor = PrimaryPurple,
+                            unfocusedBorderColor = TextSecondary,
+                            cursorColor = PrimaryPurple,
+                            focusedContainerColor = SurfaceDark,
+                            unfocusedContainerColor = SurfaceDark
+                        ),
+                        modifier = Modifier.fillMaxWidth().menuAnchor()
                     )
-                )
+                    ExposedDropdownMenu(
+                        expanded = isPropertyTypeDropdownExpanded,
+                        onDismissRequest = { isPropertyTypeDropdownExpanded = false },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        listOf("new house", "apartment", "business office").forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(text = option, color = TextPrimary) },
+                                onClick = {
+                                    onPropertyTypeChange(option)
+                                    isPropertyTypeDropdownExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
                 Spacer(modifier = Modifier.height(2.dp))
                 Button(
                     onClick = {

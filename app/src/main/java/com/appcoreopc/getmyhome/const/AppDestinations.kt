@@ -7,4 +7,5 @@ enum class AppDestinations(
     HOME("Home", R.drawable.ic_home),
     INSIGHTS("Insights", R.drawable.ic_analytics),
     SETTINGS("Settings", R.drawable.ic_account_box),
+    NOTIFICATION_VIEWER("Notification", R.drawable.ic_analytics), // Reusing analytics icon for now
 }
