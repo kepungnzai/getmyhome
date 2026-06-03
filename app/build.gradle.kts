@@ -4,7 +4,7 @@ plugins {
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
     alias(libs.plugins.kotlin.android)
-    id("com.google.gms.google-services") apply false
+    id("com.google.gms.google-services")
 }
 
 android {
